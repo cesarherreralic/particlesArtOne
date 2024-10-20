@@ -154,6 +154,13 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="compute_particles.glsl" />
+    <None Include="fragment_core.glsl" />
+    <None Include="fragment_particles.glsl" />
+    <None Include="vertex_core.glsl" />
+    <None Include="vertex_particles.glsl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -36,4 +36,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="vertex_core.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="fragment_core.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="vertex_particles.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="fragment_particles.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="compute_particles.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
