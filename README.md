@@ -10,7 +10,7 @@ BUT so far its not there yet, so for now I'm displaying something that seems to 
 
 Some visuals of the current status of the project (21/10/2024):
 
-
+![cap2](https://github.com/user-attachments/assets/f1508cc3-f30e-4bd2-b004-6d38280b7b39) ![cap1](https://github.com/user-attachments/assets/41058571-77fa-4ee0-90a0-f3649fe8e3ee)
 
 ## Getting Started
 
