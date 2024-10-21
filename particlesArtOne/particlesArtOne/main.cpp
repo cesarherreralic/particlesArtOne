@@ -12,6 +12,9 @@ float pressureMultiplier = 0.5f;
 float targetDensity = 2.75f;
 float speed = 5.f;
 
+const GLuint amountOfParticles = 256;
+const GLuint amountOfWorkGroups = 64;
+
 float randomBetweenFloats(float min, float max) {
 	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
 }
@@ -47,8 +50,6 @@ GLdouble customTimer(int lastCallTime)
 
 	return T_Interval;
 }
-
-const GLuint amountOfParticles = 256;
 
 //Particle* particles;
 //Particle* particles = new Particle[amountOfParticles]{
@@ -135,14 +136,12 @@ Particle* fillParticlesArray(Particle* particles)
 };
 Particle* particles = fillParticlesArray(particles);
 
-//unsigned int nrOfParticles = sizeof(particles) / sizeof(Particle);
-unsigned int nrOfParticles = amountOfParticles;
 bool printNr(unsigned int nr) {
 	std::cout << "nrOfParticles: " << nr << "\n";
 	return true;
 };
 bool result = printNr(amountOfParticles);
-const GLuint particlesFloats = nrOfParticles * 12;
+const GLuint particlesFloats = amountOfParticles * 12;
 const int pointSize = 7;
 
 
@@ -357,7 +356,7 @@ int main() {
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particles_VBO1);
 	//glBufferData(GL_SHADER_STORAGE_BUFFER, nrOfParticles * sizeof(Particle), particles, GL_DYNAMIC_COPY);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, nrOfParticles * sizeof(Particle), particles, GL_DYNAMIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, amountOfParticles * sizeof(Particle), particles, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particles_VBO1);
 
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)offsetof(Particle, position));
@@ -380,7 +379,7 @@ int main() {
 	glBufferData(GL_ARRAY_BUFFER, nrOfParticles * sizeof(Particle), particles, GL_DYNAMIC_COPY);*/
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particles_VBO2);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, nrOfParticles * sizeof(Particle), particles, GL_DYNAMIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, amountOfParticles * sizeof(Particle), particles, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particles_VBO2);
 
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)offsetof(Particle, position));
@@ -610,7 +609,8 @@ int main() {
 		compute_program.use();
 
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, active_vbo);
-		glDispatchCompute(amountOfParticles / 128, 1, 1);
+		//glDispatchCompute(amountOfParticles / 128, 1, 1);
+		glDispatchCompute(amountOfParticles / amountOfWorkGroups, 1, 1);
 		//glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -632,7 +632,7 @@ int main() {
 
 		//glPointSize(pointSize);
 		// Drawing particles without indices
-		glDrawArrays(GL_POINTS, 0, nrOfParticles);
+		glDrawArrays(GL_POINTS, 0, amountOfParticles);
 
 		glEndTransformFeedback();
 
@@ -659,7 +659,7 @@ int main() {
 		glBindVertexArray(particles_VAO1);
 
 		// Drawing particles without indices
-		glDrawArrays(GL_POINTS, 0, nrOfParticles);
+		glDrawArrays(GL_POINTS, 0, amountOfParticles);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
