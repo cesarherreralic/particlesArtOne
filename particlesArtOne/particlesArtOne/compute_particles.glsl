@@ -109,14 +109,18 @@ vec2 CalculatePressureForce(uint index){
 	return pressureForce;
 }
 
-void main()
-{
-	uint idx = gl_GlobalInvocationID.x;
+Particle handleBorderCollission(vec4 currentPosition, vec4 currentVelocity){
+	
+	Particle newParticle = Particle(
+		vec4(1.f), // position
+		vec4(1.f), // velocity
+		vec4(1.f) // extra
+	);
 
 	float dt = time * speed;
 
-	vec4 velocity = particles[idx].velocity;
-	vec4 position = particles[idx].position;
+	vec4 position = currentPosition;
+	vec4 velocity = currentVelocity;
 
 	velocity += vector_down * gravity * dt;
 	position += velocity * dt;
@@ -146,12 +150,26 @@ void main()
         }
 	}
 
+	newParticle.position = position;
+	newParticle.velocity = velocity;
+
+	return newParticle;
+}
+
+void main()
+{
+	uint idx = gl_GlobalInvocationID.x;
+
+	float dt = time * speed;
+
+	Particle particle = handleBorderCollission(particles[idx].position, particles[idx].velocity);
+
 	vec2 pressureForce = CalculatePressureForce(idx);
 	float density = particles[idx].extra[3];
 	vec2 pressureAcceleration = pressureForce / density;
 
-	particles[idx].position = position;	
-	//particles[idx].velocity = velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
+	particles[idx].position = particle.position;	
+	//particles[idx].velocity = particle.velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
 	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f) * dt);
 	particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));
 
