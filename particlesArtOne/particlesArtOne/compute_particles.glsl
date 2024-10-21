@@ -17,12 +17,17 @@ layout(std430, binding = 0) buffer ParticlesBuffer {
 };
 
 uniform float time;
+uniform float gravity;
+uniform float collisionDamping;
+uniform float pressureMultiplier;
+uniform float targetDensity;
+uniform float speed;
 
-const float gravity = 0.f;
+//const float gravity = 0.f;
 vec4 vector_down = vec4(0.f,-1.f,0.f, 0.f); // direction of gravity (floor)
 
 // handle collision with borders
-float collisionDamping = 0.9f;
+//float collisionDamping = 0.9f;
 float boundY = 1.f;
 float boundX = 1.f;
 float verticalSurfaceTolerance = 0.05f;
@@ -76,9 +81,6 @@ float CalculateProperty(vec2 samplePoint){
 	return property;
 }
 
-float pressureMultiplier = 0.5f;
-float targetDensity = 2.75f;
-
 float ConvertDensityToPressure(float density){
 	float densityError = density - targetDensity;
 	float pressure = densityError * pressureMultiplier;
@@ -111,7 +113,7 @@ void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
 
-	float dt = time * 6;
+	float dt = time * speed;
 
 	vec4 velocity = particles[idx].velocity;
 	vec4 position = particles[idx].position;
@@ -150,6 +152,7 @@ void main()
 
 	particles[idx].position = position;	
 	//particles[idx].velocity = velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
-	particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f)* dt);
+	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f) * dt);
+	particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));
 
 }

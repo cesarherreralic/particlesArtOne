@@ -6,6 +6,11 @@ enum key_state { NOTPUSHED, PUSHED } keyarr[127];
 
 int WINDOW_WIDTH = 800;
 int WINDOW_HEIGHT = 600;
+float gravity = 0.0f;
+float collisionDamping = 0.9f;
+float pressureMultiplier = 0.5f;
+float targetDensity = 2.75f;
+float speed = 5.f;
 
 float randomBetweenFloats(float min, float max) {
 	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
@@ -221,6 +226,9 @@ void printBufferContent(GLuint bufferId) {
 
 int main() {
 
+	struct nk_context* ctx;
+	struct nk_colorf bg;
+
 	// INIT GLFW
 	glfwInit();
 
@@ -256,6 +264,25 @@ int main() {
 		std::cout << "ERROR::MAIN.CPP::GLEW_INIT_FAILED" << "\n";
 		glfwTerminate();
 	}
+
+	ctx = nk_glfw3_init(window, NK_GLFW3_INSTALL_CALLBACKS, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
+
+	/* Load Fonts: if none of these are loaded a default font will be used  */
+	/* Load Cursor: if you uncomment cursor loading please hide the cursor */
+	{struct nk_font_atlas* atlas;
+	nk_glfw3_font_stash_begin(&atlas);
+	/*struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "../../../extra_font/DroidSans.ttf", 14, 0);*/
+	/*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
+	/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
+	/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
+	/*struct nk_font *tiny = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
+	/*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
+	nk_glfw3_font_stash_end();
+	/*nk_style_load_all_cursors(ctx, atlas->cursors);*/
+	/*nk_style_set_font(ctx, &droid->handle);*/}
+
+
+	bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 0.5f;
 
 	// OPENGL OPTIONS
 	glEnable(GL_DEPTH_TEST); // to be able to move in depth
@@ -437,6 +464,73 @@ int main() {
 
 	// MAIN LOOP
 	while (!glfwWindowShouldClose(window)) {
+
+		nk_glfw3_new_frame();
+
+		/* GUI */
+		if (nk_begin(ctx, "Physics Config", nk_rect(25, 25, 230, 250),
+			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
+			NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
+		{
+			/*enum { EASY, HARD };
+			static int op = EASY;*/
+			nk_layout_row_static(ctx, 30, 100, 1);
+			if (nk_button_label(ctx, "Reset values")) {
+				gravity = 0.f;
+				collisionDamping = 0.9f;
+				pressureMultiplier = 0.5f;
+				targetDensity = 2.75f;
+				speed = 5.f;
+				std::cout << "Values are now like the start default values" << "\n";
+			}
+
+			/*nk_layout_row_dynamic(ctx, 30, 2);
+			if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
+			if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;*/
+
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_property_float(ctx, "Gravity:", -10.f, &gravity, 10.f, 0.1f, 0.01f);
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_slider_float(ctx, -10.f, &gravity, 10.f, 0.01f);
+
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_property_float(ctx, "Speed:", -10.f, &speed, 20.f, 1.f, 1.f);
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_slider_float(ctx, -10.f, &speed, 20.f, 1.f);
+
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_property_float(ctx, "Pressure Mult:", -10.f, &pressureMultiplier, 10.f, 0.1f, 0.01f);
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_slider_float(ctx, -10.f, &pressureMultiplier, 10.f, 0.01f);
+
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_property_float(ctx, "Target Density:", -10.f, &targetDensity, 10.f, 0.1f, 0.01f);
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_slider_float(ctx, -10.f, &targetDensity, 10.f, 0.01f);
+
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_property_float(ctx, "Collision Damping:", -10.f, &collisionDamping, 10.f, 0.1f, 0.01f);
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_slider_float(ctx, -10.f, &collisionDamping, 10.f, 0.01f);
+
+
+			/*nk_layout_row_dynamic(ctx, 20, 1);
+			nk_label(ctx, "background:", NK_TEXT_LEFT);*/
+			/*nk_layout_row_dynamic(ctx, 25, 1);
+			if (nk_combo_begin_color(ctx, nk_rgb_cf(bg), nk_vec2(nk_widget_width(ctx), 400))) {
+				nk_layout_row_dynamic(ctx, 120, 1);
+				bg = nk_color_picker(ctx, bg, NK_RGBA);
+				nk_layout_row_dynamic(ctx, 25, 1);
+				bg.r = nk_propertyf(ctx, "#R:", 0, bg.r, 1.0f, 0.01f, 0.005f);
+				bg.g = nk_propertyf(ctx, "#G:", 0, bg.g, 1.0f, 0.01f, 0.005f);
+				bg.b = nk_propertyf(ctx, "#B:", 0, bg.b, 1.0f, 0.01f, 0.005f);
+				bg.a = nk_propertyf(ctx, "#A:", 0, bg.a, 1.0f, 0.01f, 0.005f);
+				nk_combo_end(ctx);
+			}*/
+		}
+		nk_end(ctx);
+
+
 		// UPDATE INPUT
 		glfwPollEvents(); // Will let the cursor interact with the window
 
@@ -486,6 +580,12 @@ int main() {
 		core_program.set1f(timeValue, "time");
 		particles_program.set1f(timeValue, "time");
 		compute_program.set1f(timeValue, "time");
+
+		compute_program.set1f(gravity, "gravity");
+		compute_program.set1f(collisionDamping, "collisionDamping");
+		compute_program.set1f(pressureMultiplier, "pressureMultiplier");
+		compute_program.set1f(targetDensity, "targetDensity");
+		compute_program.set1f(speed, "speed");
 
 		// Use a program
 		core_program.use();
@@ -566,6 +666,8 @@ int main() {
 		glBindVertexArray(0);
 
 
+		nk_glfw3_render(NK_ANTI_ALIASING_ON);
+
 		//End draw
 		glfwSwapBuffers(window);
 		glFlush();
@@ -578,6 +680,7 @@ int main() {
 
 	//END OF PROGRAM
 	glfwDestroyWindow(window);
+	nk_glfw3_shutdown();
 	glfwTerminate();
 
 
