@@ -2,8 +2,8 @@
 
 #define PI 3.1415926535897932384626433832795
 
-// Process particles in blocks of 128
-layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+// Process particles in blocks of 256
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 // Define el buffer con el binding explícito en el shader
 struct Particle {
@@ -87,9 +87,10 @@ float ConvertDensityToPressure(float density){
 	return pressure;
 }
 
-vec2 CalculatePressureForce(uint index){
+vec2 CalculatePressureForce(Particle particle, uint index){
 	vec2 pressureForce = vec2(0.f, 0.f);
-	vec2 samplePoint = particles[index].position.xy;
+	//vec2 samplePoint = particles[index].position.xy;
+	vec2 samplePoint = particle.position.xy;
 
 	// loop over all particles
 	for(int i=0; i < particles.length(); ++i)
@@ -99,18 +100,23 @@ vec2 CalculatePressureForce(uint index){
 		vec2 position = particles[i].position.xy;
 		vec2 offset = position - samplePoint;
 		float dst = length(offset);
-		vec2 dir = dst == 0 ? vec2(0.f, 1.f) : offset / dst;
+		vec2 dir = dst <= 0 ? vec2(0.f, 1.f) : offset / dst;
 		float smoothingRadius = particles[i].extra.x;
 		float mass = particles[i].extra.y;
 		float slope = SmoothingKernelDerivative(dst, smoothingRadius);
-		float density = particles[i].extra.w;
+		float density = particles[i].extra[3];
+		//float density = CalculateDensity(particles[i].position.xy);
 		pressureForce += -ConvertDensityToPressure(density) * dir * mass * slope / density;
 	}
 	return pressureForce;
 }
 
-Particle handleBorderCollission(vec4 currentPosition, vec4 currentVelocity){
+Particle handleBorderCollision(uint idx){
 	
+	vec4 currentPosition = particles[idx].position;
+	vec4 currentVelocity = particles[idx].velocity;
+	vec4 currentExtra = particles[idx].extra;
+
 	Particle newParticle = Particle(
 		vec4(1.f), // position
 		vec4(1.f), // velocity
@@ -152,8 +158,103 @@ Particle handleBorderCollission(vec4 currentPosition, vec4 currentVelocity){
 
 	newParticle.position = position;
 	newParticle.velocity = velocity;
+	newParticle.extra = currentExtra; // This one has no changes
 
 	return newParticle;
+}
+
+void handleParticleToParticleCollision(uint idx){
+
+	// new calc from here
+	Particle particle1 = particles[idx];
+	float m1 = particle1.extra[1];
+	vec2 v1 = particle1.velocity.xy;
+	float radius = particle1.extra[0];
+
+	for(int i=0; i < particles.length(); ++i)
+	{
+		if (i == idx) continue;
+
+		Particle particle2 = particles[i];
+
+		float currentRadius = particle2.extra[0];
+
+		if (distance(particle1.position.xy, particle2.position.xy) <= (currentRadius + radius)*10 ){
+		
+			float m2 = particles[i].extra[1];
+
+			vec2 n = vec2(particle2.position.x - particle1.position.x, particle2.position.y - particle1.position.y);
+
+			vec2 un = n / sqrt(pow(n.x, 2) + pow(n.y, 2));
+
+			vec2 ut = vec2(-un.y, un.x);
+
+			vec2 v2 = particle2.velocity.xy;
+
+			float v1n = dot(un, v1);
+			float v1t = dot(ut, v1);
+			float v2n = dot(un, v2);
+			float v2t = dot(ut, v2);
+
+			v1n = (v1n * (m1 - m2) + 2*m2*v2n)/(m1+m2);
+			v2n = (v2n * (m2 - m1) + 2*m1*v1n)/(m1+m2);
+
+			vec2 vv1n = v1n * un;
+			vec2 vv1t = v1t * ut;
+
+			vec2 vv2n = v2n * un;
+			vec2 vv2t = v2t * ut;
+
+			vec2 finalVelocity1 = vv1n + vv1t;
+			vec2 finalVelocity2 = vv2n + vv2t;
+	
+			particles[idx].velocity = vec4(finalVelocity1, vec2(0.f));
+			particles[i].velocity = vec4(finalVelocity2, vec2(0.f));
+		}
+
+	}
+
+	//particles[idx] = newParticle;
+
+	// new calc ends here
+
+
+	// float dt = time * speed;
+	// vec4 position = initalParticle.position;
+	// float radius = initalParticle.extra[0];
+	
+	// vec2 v1 = initalParticle.velocity.xy;
+	// float m1 = initalParticle.extra[1];
+	// vec2 C1 = initalParticle.position.xy;
+
+	// for(int i=0; i < particles.length(); ++i)
+	// {
+	// 	if (idx == i) continue;
+
+	// 	vec2 v2 = particles[i].velocity.xy;
+	// 	float m2 = particles[i].extra[1];
+	// 	vec2 C2 = particles[i].position.xy;
+	// 	float currentRadius = particles[i].extra[0];
+
+
+	// 	if (distance(C2, position.xy) <= currentRadius + radius ){
+			// there's collision
+	// 		vec2 CSubstract = C1-C2;
+			//v1 = v1 - ((2*m2)/(m1+m2))*(1/(pow(abs(CSubstract.x), 2) + pow(abs(CSubstract.y), 2)))*CSubstract;
+	// 		v1 = (v1 * (m1 - m2) + 2*m2*v2)/(m1+m2);
+	// 		v2 = (v2 * ( m2 - m1) + 2*m1*v1)/(m1+m2);
+			//v1 = vec4(0.f);
+			//position = vec4(0.f);
+	// 		newParticle.velocity = vec4(v1, vec2(0.f));
+	// 		particles[i].velocity = vec4(v2, vec2(0.f));
+			//particles[i].position = vec4(0.f);
+
+	// 	}
+
+	// }
+
+
+	//return newParticle;
 }
 
 void main()
@@ -162,15 +263,25 @@ void main()
 
 	float dt = time * speed;
 
-	Particle particle = handleBorderCollission(particles[idx].position, particles[idx].velocity);
+	//Particle particleStep0 = particles[idx];
+	particles[idx] = handleBorderCollision(idx);
+	//Particle particleStep0 = handleBorderCollision(idx);
 
-	vec2 pressureForce = CalculatePressureForce(idx);
+	//particles[idx] = handleParticleToParticleCollision(particles[idx], idx);
+	//handleParticleToParticleCollision(idx);
+
+	vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
 	float density = particles[idx].extra[3];
 	vec2 pressureAcceleration = pressureForce / density;
 
-	particles[idx].position = particle.position;	
-	//particles[idx].velocity = particle.velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
-	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f) * dt);
-	particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));
+	//particles[idx].position = particles[idx].position;
+	//particles[idx].velocity = particles[idx].velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
+	particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f) * dt);
+	
+	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));
+
+	handleParticleToParticleCollision(idx);
+
+	//particles[idx] = handleParticleToParticleCollision(particles[idx], idx);
 
 }

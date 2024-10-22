@@ -8,12 +8,12 @@ int WINDOW_WIDTH = 800;
 int WINDOW_HEIGHT = 600;
 float gravity = 0.0f;
 float collisionDamping = 0.9f;
-float pressureMultiplier = 0.5f;
+float pressureMultiplier = 0.05f;
 float targetDensity = 2.75f;
-float speed = 5.f;
+float speed = 0.1f;
 
 const GLuint amountOfParticles = 256;
-const GLuint amountOfWorkGroups = 64;
+const GLuint amountOfWorkGroups = 256;
 
 float randomBetweenFloats(float min, float max) {
 	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
@@ -91,20 +91,23 @@ GLdouble customTimer(int lastCallTime)
 
 float SmoothingKernel(float radius, float dst) {
 	float volume = PI * pow(radius, 8) / 4;
-	float value = std::max(0.f, radius * radius - dst * dst);
+	float value = std::max(0.f, (float)pow(radius, 2) - (float)pow(dst, 2));
 	return value * value * value / volume;
 }
 
-float calculateDensity(Particle* particles, glm::vec4 position, float mass) {
+float calculateDensity(Particle* particles, int index) {
 	float density = 0.f;
+	const float mass = 1.f;
+	glm::vec4 position = particles[index].position;
 
 	for (int i = 0; i < amountOfParticles; ++i)
 	{
 		glm::vec2 currentParticlePosition = glm::vec2(particles[i].position[0], particles[i].position[1]);
 		glm::vec2 samplePoint = glm::vec2(position[0], position[1]);
 		glm::vec2 vectorsSubstracted = currentParticlePosition - samplePoint;
+		//glm::vec2 vectorsSubstracted = samplePoint - currentParticlePosition;
 		float dst = sqrt((vectorsSubstracted[0] * vectorsSubstracted[0]) + (vectorsSubstracted[1] * vectorsSubstracted[1]));
-		float mass = particles[i].extra[1];
+		//float mass = particles[i].extra[1];
 		float influence = SmoothingKernel(particles[i].extra[0], dst);
 		density += mass * influence;
 	}
@@ -121,16 +124,19 @@ Particle* fillParticlesArray(Particle* particles)
 	for (int i = 0; i < amountOfParticles; i++)
 	{
 		particles[i].setPosition(glm::vec4(randomBetweenFloats(0.0f, 0.99f), randomBetweenFloats(0.f, 0.99f), 0.f, 0.f));
-		particles[i].setVelocity(glm::vec4(randomBetweenFloats(0.f, 0.3f), randomBetweenFloats(0.f, 0.3f), 0.f, 0.f));
+		particles[i].setVelocity(glm::vec4(randomBetweenFloats(0.f, 0.03f), randomBetweenFloats(0.f, 0.03f), 0.f, 0.f));
 		//particles[i].setExtra(glm::vec4(randomBetweenFloats(0.f, 0.3f), randomBetweenFloats(0.f, 0.3f), 0.f, 0.f));
-		particles[i].setRadius(randomBetweenFloats(15.f, 35.0f));
-		particles[i].setMass(randomBetweenFloats(0.1f, 3.0f));
+		//particles[i].setRadius(randomBetweenFloats(0.5f, 1.5f));
+		particles[i].setRadius(1.5f);
+		//particles[i].setMass(randomBetweenFloats(0.6f, 1.0f));
+		particles[i].setMass(10.0f);
 		particles[i].setProperty(1.f);
+		//particles[i].setDensity(randomBetweenFloats(0.1f, 3.0f));
 	}
 	// preCalculate densities
 	for (int i = 0; i < amountOfParticles; i++)
 	{
-		particles[i].setDensity(calculateDensity(particles, particles[i].position, particles[i].extra[1]));
+		particles[i].setDensity(calculateDensity(particles, i));
 	}
 	return particles;
 };
@@ -477,9 +483,10 @@ int main() {
 			if (nk_button_label(ctx, "Reset values")) {
 				gravity = 0.f;
 				collisionDamping = 0.9f;
-				pressureMultiplier = 0.5f;
-				targetDensity = 2.75f;
-				speed = 5.f;
+				pressureMultiplier = 0.05f;
+				targetDensity = 0.75f;
+				speed = 1.f;
+
 				std::cout << "Values are now like the start default values" << "\n";
 			}
 
