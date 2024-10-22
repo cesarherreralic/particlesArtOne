@@ -111,17 +111,11 @@ vec2 CalculatePressureForce(Particle particle, uint index){
 	return pressureForce;
 }
 
-Particle handleBorderCollision(uint idx){
+void handleBorderCollision(uint idx){
 	
 	vec4 currentPosition = particles[idx].position;
 	vec4 currentVelocity = particles[idx].velocity;
 	vec4 currentExtra = particles[idx].extra;
-
-	Particle newParticle = Particle(
-		vec4(1.f), // position
-		vec4(1.f), // velocity
-		vec4(1.f) // extra
-	);
 
 	float dt = time * speed;
 
@@ -156,16 +150,14 @@ Particle handleBorderCollision(uint idx){
         }
 	}
 
-	newParticle.position = position;
-	newParticle.velocity = velocity;
-	newParticle.extra = currentExtra; // This one has no changes
+	particles[idx].position = position;
+	particles[idx].velocity = velocity;
+	particles[idx].extra = currentExtra; // This one has no changes
 
-	return newParticle;
 }
 
 void handleParticleToParticleCollision(uint idx){
 
-	// new calc from here
 	Particle particle1 = particles[idx];
 	float m1 = particle1.extra[1];
 	vec2 v1 = particle1.velocity.xy;
@@ -185,7 +177,7 @@ void handleParticleToParticleCollision(uint idx){
 
 			vec2 n = vec2(particle2.position.x - particle1.position.x, particle2.position.y - particle1.position.y);
 
-			vec2 un = n / sqrt(pow(n.x, 2) + pow(n.y, 2));
+			vec2 un = n / max(sqrt(pow(n.x, 2) + pow(n.y, 2)), 0.1f);
 
 			vec2 ut = vec2(-un.y, un.x);
 
@@ -196,8 +188,8 @@ void handleParticleToParticleCollision(uint idx){
 			float v2n = dot(un, v2);
 			float v2t = dot(ut, v2);
 
-			v1n = (v1n * (m1 - m2) + 2*m2*v2n)/(m1+m2);
-			v2n = (v2n * (m2 - m1) + 2*m1*v1n)/(m1+m2);
+			v1n = (v1n * (m1 - m2) + 2*m2*v2n)/max((m1+m2), 0.1f);
+			v2n = (v2n * (m2 - m1) + 2*m1*v1n)/max((m1+m2), 0.1f);
 
 			vec2 vv1n = v1n * un;
 			vec2 vv1t = v1t * ut;
@@ -214,47 +206,6 @@ void handleParticleToParticleCollision(uint idx){
 
 	}
 
-	//particles[idx] = newParticle;
-
-	// new calc ends here
-
-
-	// float dt = time * speed;
-	// vec4 position = initalParticle.position;
-	// float radius = initalParticle.extra[0];
-	
-	// vec2 v1 = initalParticle.velocity.xy;
-	// float m1 = initalParticle.extra[1];
-	// vec2 C1 = initalParticle.position.xy;
-
-	// for(int i=0; i < particles.length(); ++i)
-	// {
-	// 	if (idx == i) continue;
-
-	// 	vec2 v2 = particles[i].velocity.xy;
-	// 	float m2 = particles[i].extra[1];
-	// 	vec2 C2 = particles[i].position.xy;
-	// 	float currentRadius = particles[i].extra[0];
-
-
-	// 	if (distance(C2, position.xy) <= currentRadius + radius ){
-			// there's collision
-	// 		vec2 CSubstract = C1-C2;
-			//v1 = v1 - ((2*m2)/(m1+m2))*(1/(pow(abs(CSubstract.x), 2) + pow(abs(CSubstract.y), 2)))*CSubstract;
-	// 		v1 = (v1 * (m1 - m2) + 2*m2*v2)/(m1+m2);
-	// 		v2 = (v2 * ( m2 - m1) + 2*m1*v1)/(m1+m2);
-			//v1 = vec4(0.f);
-			//position = vec4(0.f);
-	// 		newParticle.velocity = vec4(v1, vec2(0.f));
-	// 		particles[i].velocity = vec4(v2, vec2(0.f));
-			//particles[i].position = vec4(0.f);
-
-	// 	}
-
-	// }
-
-
-	//return newParticle;
 }
 
 void main()
@@ -263,16 +214,14 @@ void main()
 
 	float dt = time * speed;
 
-	//Particle particleStep0 = particles[idx];
-	particles[idx] = handleBorderCollision(idx);
-	//Particle particleStep0 = handleBorderCollision(idx);
-
+	handleBorderCollision(idx);
+	
 	//particles[idx] = handleParticleToParticleCollision(particles[idx], idx);
-	//handleParticleToParticleCollision(idx);
+	handleParticleToParticleCollision(idx);
 
 	vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
 	float density = particles[idx].extra[3];
-	vec2 pressureAcceleration = pressureForce / density;
+	vec2 pressureAcceleration = pressureForce / max(density, 0.1f);
 
 	//particles[idx].position = particles[idx].position;
 	//particles[idx].velocity = particles[idx].velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
@@ -280,8 +229,6 @@ void main()
 	
 	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));
 
-	handleParticleToParticleCollision(idx);
-
-	//particles[idx] = handleParticleToParticleCollision(particles[idx], idx);
+	//handleParticleToParticleCollision(idx);
 
 }
