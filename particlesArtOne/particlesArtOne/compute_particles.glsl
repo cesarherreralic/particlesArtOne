@@ -3,7 +3,7 @@
 #define PI 3.1415926535897932384626433832795
 
 // Process particles in blocks of 256
-layout (local_size_x = 512, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
 
 // Define el buffer con el binding explícito en el shader
 struct Particle {
@@ -272,12 +272,12 @@ void main()
 	
 	//handleParticleToParticleCollision(idx);
 
-	//vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
-	//float density = particles[idx].extra[3];
-	//vec2 pressureAcceleration = pressureForce / max(density, 0.1f);
+	vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
+	float density = particles[idx].extra[3];
+	vec2 pressureAcceleration = pressureForce / max(density, 0.1f);
 
 	//particles[idx].position = particles[idx].position;
-	//particles[idx].velocity = particles[idx].velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
+	particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f));
 	//particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f) * dt);
 	
 	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));

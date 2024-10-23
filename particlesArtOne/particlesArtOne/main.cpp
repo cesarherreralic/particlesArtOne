@@ -8,12 +8,12 @@ int WINDOW_WIDTH = 800;
 int WINDOW_HEIGHT = 600;
 float gravity = 0.0f;
 float collisionDamping = 0.8f;
-float pressureMultiplier = 0.05f;
-float targetDensity = 2.75f;
-float speed = 1.f;
+float pressureMultiplier = 0.04f;
+float targetDensity = 3.75f;
+float speed = 0.3f;
 
-const GLuint amountOfParticles = 512;
-const GLuint amountOfWorkGroups = 512;
+const GLuint amountOfParticles = 2048;
+const GLuint amountOfWorkGroups = 1024;
 
 float randomBetweenFloats(float min, float max) {
 	float result = min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
@@ -131,10 +131,10 @@ Particle* fillParticlesArray(Particle* particles)
 		particles[i].setProperty(1.f);
 	}
 	// preCalculate densities
-	/*for (int i = 0; i < amountOfParticles; i++)
+	for (int i = 0; i < amountOfParticles; i++)
 	{
 		particles[i].setDensity(calculateDensity(particles, i));
-	}*/
+	}
 	return particles;
 };
 Particle* particles = fillParticlesArray(particles);
