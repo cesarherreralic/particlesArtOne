@@ -33,7 +33,7 @@ void main()
 	vec2 ndcPosition = clipSpacePos.xy / clipSpacePos.w;
 
 	screenPosition = (ndcPosition * 0.5f + 0.5f) * resolution;
-	radius = particle.extra[0] * 5;
+	radius = particle.extra[0];
 	gl_PointSize = max(30.0f, 1.f);
 	gl_Position = clipSpacePos;
 }

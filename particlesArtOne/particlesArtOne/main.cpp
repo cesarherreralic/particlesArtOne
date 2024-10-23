@@ -7,16 +7,17 @@ enum key_state { NOTPUSHED, PUSHED } keyarr[127];
 int WINDOW_WIDTH = 800;
 int WINDOW_HEIGHT = 600;
 float gravity = 0.0f;
-float collisionDamping = 0.9f;
+float collisionDamping = 0.8f;
 float pressureMultiplier = 0.05f;
 float targetDensity = 2.75f;
-float speed = 0.1f;
+float speed = 1.f;
 
-const GLuint amountOfParticles = 256;
-const GLuint amountOfWorkGroups = 256;
+const GLuint amountOfParticles = 512;
+const GLuint amountOfWorkGroups = 512;
 
 float randomBetweenFloats(float min, float max) {
-	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
+	float result = min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
+	return rand() % 2 ? result : -result;
 }
 
 float randomBetween(int min, int max) {
@@ -41,12 +42,12 @@ GLdouble customTimer(int lastCallTime)
 	T_FPS_All += T_Interval;
 
 	if (T_FPS_Count >= 1000) {
-		printf("FPS rate: %i\n", (GLint)(1.0 / ((GLdouble)T_FPS_All / (GLdouble)T_FPS_Count)));
+		//printf("FPS rate: %i\n", (GLint)(1.0 / ((GLdouble)T_FPS_All / (GLdouble)T_FPS_Count)));
 		T_FPS_All = 0.0;
 		T_FPS_Count = 0;
 	}
 
-	printf("deltatime: %f\n", T_Interval);
+	//printf("deltatime: %f\n", T_Interval);
 
 	return T_Interval;
 }
@@ -123,21 +124,17 @@ Particle* fillParticlesArray(Particle* particles)
 	particles = new Particle[amountOfParticles];
 	for (int i = 0; i < amountOfParticles; i++)
 	{
-		particles[i].setPosition(glm::vec4(randomBetweenFloats(0.0f, 0.99f), randomBetweenFloats(0.f, 0.99f), 0.f, 0.f));
+		particles[i].setPosition(glm::vec4(randomBetweenFloats(0.01f, 0.7f), randomBetweenFloats(0.01f, 0.7f), 0.f, 0.f));
 		particles[i].setVelocity(glm::vec4(randomBetweenFloats(0.f, 0.03f), randomBetweenFloats(0.f, 0.03f), 0.f, 0.f));
-		//particles[i].setExtra(glm::vec4(randomBetweenFloats(0.f, 0.3f), randomBetweenFloats(0.f, 0.3f), 0.f, 0.f));
-		//particles[i].setRadius(randomBetweenFloats(0.5f, 1.5f));
-		particles[i].setRadius(1.5f);
-		//particles[i].setMass(randomBetweenFloats(0.6f, 1.0f));
+		particles[i].setRadius(0.015f);
 		particles[i].setMass(10.0f);
 		particles[i].setProperty(1.f);
-		//particles[i].setDensity(randomBetweenFloats(0.1f, 3.0f));
 	}
 	// preCalculate densities
-	for (int i = 0; i < amountOfParticles; i++)
+	/*for (int i = 0; i < amountOfParticles; i++)
 	{
 		particles[i].setDensity(calculateDensity(particles, i));
-	}
+	}*/
 	return particles;
 };
 Particle* particles = fillParticlesArray(particles);
@@ -473,7 +470,7 @@ int main() {
 		nk_glfw3_new_frame();
 
 		/* GUI */
-		if (nk_begin(ctx, "Physics Config", nk_rect(25, 25, 230, 250),
+		if (nk_begin(ctx, "Physics Config", nk_rect(25, 25, 330, 350),
 			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 			NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
 		{

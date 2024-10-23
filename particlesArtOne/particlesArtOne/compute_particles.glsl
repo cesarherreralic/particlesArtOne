@@ -3,7 +3,7 @@
 #define PI 3.1415926535897932384626433832795
 
 // Process particles in blocks of 256
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 512, local_size_y = 1, local_size_z = 1) in;
 
 // Define el buffer con el binding explícito en el shader
 struct Particle {
@@ -28,8 +28,8 @@ vec4 vector_down = vec4(0.f,-1.f,0.f, 0.f); // direction of gravity (floor)
 
 // handle collision with borders
 //float collisionDamping = 0.9f;
-float boundY = 1.f;
-float boundX = 1.f;
+float boundY = 0.99f;
+float boundX = 0.99f;
 float verticalSurfaceTolerance = 0.05f;
 
 float SmoothingKernel(float radius, float dst){
@@ -177,7 +177,7 @@ void handleParticleToParticleCollision(uint idx){
 
 			vec2 n = vec2(particle2.position.x - particle1.position.x, particle2.position.y - particle1.position.y);
 
-			vec2 un = n / max(sqrt(pow(n.x, 2) + pow(n.y, 2)), 0.1f);
+			vec2 un = n / max(sqrt(n.x*n.x + n.y*n.y), 0.0001f);
 
 			vec2 ut = vec2(-un.y, un.x);
 
@@ -188,8 +188,8 @@ void handleParticleToParticleCollision(uint idx){
 			float v2n = dot(un, v2);
 			float v2t = dot(ut, v2);
 
-			v1n = (v1n * (m1 - m2) + 2*m2*v2n)/max((m1+m2), 0.1f);
-			v2n = (v2n * (m2 - m1) + 2*m1*v1n)/max((m1+m2), 0.1f);
+			v1n = (v1n * (m1 - m2) + 2*m2*v2n)/max((m1+m2), 0.0001f);
+			v2n = (v2n * (m2 - m1) + 2*m1*v1n)/max((m1+m2), 0.0001f);
 
 			vec2 vv1n = v1n * un;
 			vec2 vv1t = v1t * ut;
@@ -208,24 +208,77 @@ void handleParticleToParticleCollision(uint idx){
 
 }
 
+void addGravity(uint idx){
+	//uint pxPerM = 50;
+	//uint fps = 60;
+	float dt = time * speed;
+	particles[idx].velocity += vector_down * (gravity /100) * dt;
+	//particles[idx].velocity.y += gravity*9.8/fps*fps*pxPerM;
+}
+
+void handleWallCollision(uint idx){
+	float radius = particles[idx].extra[0];
+	if (particles[idx].position.x + radius <= -1.31f || particles[idx].position.x + radius >= 1.31f) {
+		particles[idx].velocity.x = -collisionDamping*particles[idx].velocity.x;
+	}
+
+	if (particles[idx].position.y + radius <= -0.98f || particles[idx].position.y + radius >= 0.98f) {
+		particles[idx].velocity.y = -collisionDamping*particles[idx].velocity.y;
+	}
+}
+
+vec2 ballHitVelocity(uint idx1, uint idx2){
+	Particle b1 = particles[idx1];
+	Particle b2 = particles[idx2];
+	float mRatio = (collisionDamping+1.f)*b2.extra[1]/(b1.extra[1]+b2.extra[1]);
+	vec2 vDiff = b1.velocity.xy - b2.velocity.xy;
+	vec2 rDiff = b1.position.xy - b2.position.xy;
+	vec2 proj = (dot(vDiff, rDiff)/((rDiff[0]*rDiff[0]) + (rDiff[1]*rDiff[1])))*rDiff;
+	return b1.velocity.xy - (proj*mRatio);
+}
+
+bool isHit(uint idx1, uint idx2){
+	float dist = distance(particles[idx1].position.xy, particles[idx2].position.xy);
+	return dist <= particles[idx1].extra[0] + particles[idx2].extra[0];
+}
+
 void main()
 {
 	uint idx = gl_GlobalInvocationID.x;
 
 	float dt = time * speed;
 
-	handleBorderCollision(idx);
-	
-	//particles[idx] = handleParticleToParticleCollision(particles[idx], idx);
-	handleParticleToParticleCollision(idx);
+	for(int i=0; i < particles.length(); ++i)
+	{
+		if (idx == i) continue;
 
-	vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
-	float density = particles[idx].extra[3];
-	vec2 pressureAcceleration = pressureForce / max(density, 0.1f);
+		if (isHit(idx, i)){
+			vec2 v1 = ballHitVelocity(idx, i);
+			vec2 v2 = ballHitVelocity(i, idx);
+
+			particles[idx].velocity = vec4(v1, 0.f, 0.f);
+			particles[i].velocity = vec4(v2, 0.f, 0.f);
+		}
+	}
+
+	for(int i=0; i < particles.length(); ++i)
+	{
+		addGravity(i);
+		handleWallCollision(i);
+		particles[i].position += particles[i].velocity * speed/100;
+	}
+
+	//handleBorderCollision(idx);
+	
+	//handleParticleToParticleCollision(idx);
+
+	//vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
+	//float density = particles[idx].extra[3];
+	//vec2 pressureAcceleration = pressureForce / max(density, 0.1f);
 
 	//particles[idx].position = particles[idx].position;
 	//particles[idx].velocity = particles[idx].velocity + (vec4(pressureAcceleration, 0.f, 0.f)* dt);
-	particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f) * dt);
+	//particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f) * dt);
 	
 	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));
 
