@@ -220,12 +220,12 @@ void handleWallCollision(uint idx){
 	float radius = particles[idx].extra[0];
 	if (particles[idx].position.x + radius <= -1.3f || particles[idx].position.x + radius >= 1.3f) {
 		particles[idx].velocity.x = -collisionDamping*particles[idx].velocity.x;
-		particles[idx].position.x += -sign(particles[idx].position.x)*(0.3f);
+		particles[idx].position.x += -sign(particles[idx].position.x)*(0.003f);
 	}
 
 	if (particles[idx].position.y + radius <= -0.98f || particles[idx].position.y + radius >= 0.98f) {
 		particles[idx].velocity.y = -collisionDamping*particles[idx].velocity.y;
-		particles[idx].position.y += -sign(particles[idx].position.y)*(0.3f);
+		particles[idx].position.y += -sign(particles[idx].position.y)*(0.003f);
 	}
 }
 
@@ -276,7 +276,7 @@ void main()
 
 	vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
 	float density = particles[idx].extra[3];
-	vec2 pressureAcceleration = pressureForce / max(density, 0.1f);
+	vec2 pressureAcceleration = pressureForce / max(density, 0.3f);
 
 	//particles[idx].position = particles[idx].position;
 	particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f));
