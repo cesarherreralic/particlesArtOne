@@ -4,16 +4,16 @@
 
 enum key_state { NOTPUSHED, PUSHED } keyarr[127];
 
-int WINDOW_WIDTH = 800;
-int WINDOW_HEIGHT = 600;
+int WINDOW_WIDTH = 1200;
+int WINDOW_HEIGHT = 900;
 float gravity = 0.0f;
 float collisionDamping = 0.8f;
 float pressureMultiplier = 0.04f;
 float targetDensity = 3.75f;
 float speed = 0.3f;
 
-const GLuint amountOfParticles = 2048;
-const GLuint amountOfWorkGroups = 1024;
+const GLuint amountOfParticles = 256;
+const GLuint amountOfWorkGroups = 256;
 
 float randomBetweenFloats(float min, float max) {
 	float result = min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
@@ -273,7 +273,7 @@ int main() {
 	/* Load Cursor: if you uncomment cursor loading please hide the cursor */
 	{struct nk_font_atlas* atlas;
 	nk_glfw3_font_stash_begin(&atlas);
-	/*struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "../../../extra_font/DroidSans.ttf", 14, 0);*/
+	struct nk_font *droid = nk_font_atlas_add_from_file(atlas, "./extra_font/DroidSans.ttf", 20, 0);
 	/*struct nk_font *roboto = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Roboto-Regular.ttf", 14, 0);*/
 	/*struct nk_font *future = nk_font_atlas_add_from_file(atlas, "../../../extra_font/kenvector_future_thin.ttf", 13, 0);*/
 	/*struct nk_font *clean = nk_font_atlas_add_from_file(atlas, "../../../extra_font/ProggyClean.ttf", 12, 0);*/
@@ -281,7 +281,8 @@ int main() {
 	/*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas, "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
 	nk_glfw3_font_stash_end();
 	/*nk_style_load_all_cursors(ctx, atlas->cursors);*/
-	/*nk_style_set_font(ctx, &droid->handle);*/}
+	nk_style_set_font(ctx, &droid->handle);
+	}
 
 
 	bg.r = 0.10f, bg.g = 0.18f, bg.b = 0.24f, bg.a = 0.5f;
@@ -470,7 +471,7 @@ int main() {
 		nk_glfw3_new_frame();
 
 		/* GUI */
-		if (nk_begin(ctx, "Physics Config", nk_rect(25, 25, 330, 350),
+		if (nk_begin(ctx, "Physics Config", nk_rect(25, 25, 330, 370),
 			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 			NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
 		{

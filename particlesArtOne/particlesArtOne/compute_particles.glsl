@@ -218,14 +218,25 @@ void addGravity(uint idx){
 
 void handleWallCollision(uint idx){
 	float radius = particles[idx].extra[0];
-	if (particles[idx].position.x + radius <= -1.3f || particles[idx].position.x + radius >= 1.3f) {
+	if (particles[idx].position.x + radius < -1.31f) {
 		particles[idx].velocity.x = -collisionDamping*particles[idx].velocity.x;
-		particles[idx].position.x += -sign(particles[idx].position.x)*(0.003f);
+		particles[idx].position.x = -1.31f;
+	}
+	if (particles[idx].position.x + radius > 1.31f) {
+		particles[idx].velocity.x = -collisionDamping*particles[idx].velocity.x;
+		//particles[idx].position.x += -sign(particles[idx].position.x)*(0.03f);
+		particles[idx].position.x = 1.31f;
 	}
 
-	if (particles[idx].position.y + radius <= -0.98f || particles[idx].position.y + radius >= 0.98f) {
+	if (particles[idx].position.y + radius < -0.98f) {
 		particles[idx].velocity.y = -collisionDamping*particles[idx].velocity.y;
-		particles[idx].position.y += -sign(particles[idx].position.y)*(0.003f);
+		//particles[idx].position.y += -sign(particles[idx].position.y)*(0.03f);
+		particles[idx].position.y = -0.98f;
+	}
+	if (particles[idx].position.y + radius > 0.98f) {
+		particles[idx].velocity.y = -collisionDamping*particles[idx].velocity.y;
+		//particles[idx].position.y += -sign(particles[idx].position.y)*(0.03f);
+		particles[idx].position.y = 0.98f;
 	}
 }
 
@@ -250,18 +261,18 @@ void main()
 
 	float dt = time * speed;
 
-	for(int i=0; i < particles.length(); ++i)
-	{
-		if (idx == i) continue;
+	//for(int i=0; i < particles.length(); ++i)
+	//{
+	//	if (idx == i) continue;
 
-		if (isHit(idx, i)){
-			vec2 v1 = ballHitVelocity(idx, i);
-			vec2 v2 = ballHitVelocity(i, idx);
+	//	if (isHit(idx, i)){
+	//		vec2 v1 = ballHitVelocity(idx, i);
+	//		vec2 v2 = ballHitVelocity(i, idx);
 
-			particles[idx].velocity = vec4(v1, 0.f, 0.f);
-			particles[i].velocity = vec4(v2, 0.f, 0.f);
-		}
-	}
+	//		particles[idx].velocity = vec4(v1, 0.f, 0.f);
+	//		particles[i].velocity = vec4(v2, 0.f, 0.f);
+	//	}
+	//}
 
 	for(int i=0; i < particles.length(); ++i)
 	{
@@ -274,12 +285,12 @@ void main()
 	
 	//handleParticleToParticleCollision(idx);
 
-	vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
-	float density = particles[idx].extra[3];
-	vec2 pressureAcceleration = pressureForce / max(density, 0.3f);
+	//vec2 pressureForce = CalculatePressureForce(particles[idx], idx);
+	//float density = particles[idx].extra[3];
+	//vec2 pressureAcceleration = pressureForce / max(density, 0.3f);
 
 	//particles[idx].position = particles[idx].position;
-	particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f));
+	//particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f));
 	//particles[idx].velocity += (vec4(pressureAcceleration, 0.f, 0.f) * dt);
 	
 	//particles[idx].velocity = (vec4(pressureAcceleration, 0.f, 0.f));
