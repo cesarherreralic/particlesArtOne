@@ -218,12 +218,14 @@ void addGravity(uint idx){
 
 void handleWallCollision(uint idx){
 	float radius = particles[idx].extra[0];
-	if (particles[idx].position.x + radius <= -1.31f || particles[idx].position.x + radius >= 1.31f) {
+	if (particles[idx].position.x + radius <= -1.3f || particles[idx].position.x + radius >= 1.3f) {
 		particles[idx].velocity.x = -collisionDamping*particles[idx].velocity.x;
+		particles[idx].position.x += -sign(particles[idx].position.x)*(0.3f);
 	}
 
 	if (particles[idx].position.y + radius <= -0.98f || particles[idx].position.y + radius >= 0.98f) {
 		particles[idx].velocity.y = -collisionDamping*particles[idx].velocity.y;
+		particles[idx].position.y += -sign(particles[idx].position.y)*(0.3f);
 	}
 }
 
@@ -239,7 +241,7 @@ vec2 ballHitVelocity(uint idx1, uint idx2){
 
 bool isHit(uint idx1, uint idx2){
 	float dist = distance(particles[idx1].position.xy, particles[idx2].position.xy);
-	return dist <= particles[idx1].extra[0] + particles[idx2].extra[0];
+	return dist <= particles[idx1].extra[0] + particles[idx2].extra[0] + 0.1f;
 }
 
 void main()
