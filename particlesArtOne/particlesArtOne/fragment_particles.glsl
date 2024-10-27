@@ -7,13 +7,14 @@ in float radius;
 out vec4 fs_color;
 
 
-const float threshold = 0.3f;
+const float threshold = 0.1f;
 
 void main()
 {
 	vec2 pixelPos = gl_FragCoord.xy;
 	float dist = distance(pixelPos, screenPosition);
-	float aRadius = radius * 720;
+	//float aRadius = radius * 720;
+	float aRadius = radius;
 	vec3 aColor = vec3(1.0f);
 	//vec3 aColor = vec3(min(max(velocity.x*10.f, 0.3f), 1.f), min(max(velocity.y*10.f, 0.3f), 1.f), min(max(velocity.z*10.f, 0.3f), 1.f));
 	//vec3 aColor = vec3(min(velocity.x*10.f, 1.f), min(velocity.y*10.f, 1.f), min(velocity.z*10.f, 1.f));

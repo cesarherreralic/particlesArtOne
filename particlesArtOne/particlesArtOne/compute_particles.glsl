@@ -22,6 +22,8 @@ uniform float collisionDamping;
 uniform float pressureMultiplier;
 uniform float targetDensity;
 uniform float speed;
+uniform vec2 resolution;
+uniform int friction;
 
 //const float gravity = 0.f;
 vec4 vector_down = vec4(0.f,-1.f,0.f, 0.f); // direction of gravity (floor)
@@ -218,25 +220,21 @@ void addGravity(uint idx){
 
 void handleWallCollision(uint idx){
 	float radius = particles[idx].extra[0];
-	if (particles[idx].position.x + radius < -1.31f) {
-		particles[idx].velocity.x = -collisionDamping*particles[idx].velocity.x;
-		particles[idx].position.x = -1.31f;
+	if (particles[idx].position.x + radius < (radius*2 + 0.1f)) {
+		particles[idx].velocity.x = collisionDamping*abs(particles[idx].velocity.x);
 	}
-	if (particles[idx].position.x + radius > 1.31f) {
-		particles[idx].velocity.x = -collisionDamping*particles[idx].velocity.x;
-		//particles[idx].position.x += -sign(particles[idx].position.x)*(0.03f);
-		particles[idx].position.x = 1.31f;
+	if (particles[idx].position.x + radius > resolution.x-(radius*2 + 0.1f)) {
+		particles[idx].velocity.x = -collisionDamping*abs(particles[idx].velocity.x);
 	}
-
-	if (particles[idx].position.y + radius < -0.98f) {
-		particles[idx].velocity.y = -collisionDamping*particles[idx].velocity.y;
-		//particles[idx].position.y += -sign(particles[idx].position.y)*(0.03f);
-		particles[idx].position.y = -0.98f;
+	
+	if (particles[idx].position.y + radius < (radius*2 + 0.1f)) {
+		particles[idx].velocity.y = collisionDamping*abs(particles[idx].velocity.y);
+	// THIS NEXT ELSE IF WILL SLOW DOWN THE VELOCITY WHEN THEY ARE IN A SURFACE, ITS LIKE FRICTION
+	} else if (friction == 1 && particles[idx].position.y + radius >= (radius*2 + 0.1f) && particles[idx].position.y + radius < (radius*2 + 0.2f)) {
+		particles[idx].velocity = collisionDamping * particles[idx].velocity;
 	}
-	if (particles[idx].position.y + radius > 0.98f) {
-		particles[idx].velocity.y = -collisionDamping*particles[idx].velocity.y;
-		//particles[idx].position.y += -sign(particles[idx].position.y)*(0.03f);
-		particles[idx].position.y = 0.98f;
+	if (particles[idx].position.y + radius > resolution.y-(radius*2 + 0.1f)) {
+		particles[idx].velocity.y = -collisionDamping*abs(particles[idx].velocity.y);
 	}
 }
 
@@ -244,6 +242,9 @@ vec2 ballHitVelocity(uint idx1, uint idx2){
 	Particle b1 = particles[idx1];
 	Particle b2 = particles[idx2];
 	float mRatio = (collisionDamping+1.f)*b2.extra[1]/(b1.extra[1]+b2.extra[1]);
+	//float mRatio = (collisionDamping)*b2.extra[1]/(b1.extra[1]+b2.extra[1]);
+	//float mRatio = b2.extra[1]/(b1.extra[1]+b2.extra[1]);
+	//float mRatio = 1.f;
 	vec2 vDiff = b1.velocity.xy - b2.velocity.xy;
 	vec2 rDiff = b1.position.xy - b2.position.xy;
 	vec2 proj = (dot(vDiff, rDiff)/((rDiff[0]*rDiff[0]) + (rDiff[1]*rDiff[1])))*rDiff;
@@ -252,7 +253,7 @@ vec2 ballHitVelocity(uint idx1, uint idx2){
 
 bool isHit(uint idx1, uint idx2){
 	float dist = distance(particles[idx1].position.xy, particles[idx2].position.xy);
-	return dist <= particles[idx1].extra[0] + particles[idx2].extra[0] + 0.1f;
+	return dist <= particles[idx1].extra[0] + particles[idx2].extra[0] + 10.f;
 }
 
 void main()
@@ -261,24 +262,24 @@ void main()
 
 	float dt = time * speed;
 
-	//for(int i=0; i < particles.length(); ++i)
-	//{
-	//	if (idx == i) continue;
+	for(int i=0; i < particles.length(); ++i)
+	{
+		if (idx == i) continue;
 
-	//	if (isHit(idx, i)){
-	//		vec2 v1 = ballHitVelocity(idx, i);
-	//		vec2 v2 = ballHitVelocity(i, idx);
+		if (isHit(idx, i)){
+			vec2 v1 = ballHitVelocity(idx, i);
+			vec2 v2 = ballHitVelocity(i, idx);
 
-	//		particles[idx].velocity = vec4(v1, 0.f, 0.f);
-	//		particles[i].velocity = vec4(v2, 0.f, 0.f);
-	//	}
-	//}
+			//particles[idx].velocity = vec4(v1, 0.f, 0.f)* dt;
+			//particles[i].velocity = vec4(v2, 0.f, 0.f)* dt;
+		}
+	}
 
 	for(int i=0; i < particles.length(); ++i)
 	{
 		addGravity(i);
 		handleWallCollision(i);
-		particles[i].position += particles[i].velocity * speed/100;
+		particles[i].position += particles[i].velocity * dt;
 	}
 
 	//handleBorderCollision(idx);

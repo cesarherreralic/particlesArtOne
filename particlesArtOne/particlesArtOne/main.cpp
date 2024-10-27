@@ -10,10 +10,13 @@ float gravity = 0.0f;
 float collisionDamping = 0.8f;
 float pressureMultiplier = 0.04f;
 float targetDensity = 3.75f;
-float speed = 0.3f;
+float speed = 4.f;
 
-const GLuint amountOfParticles = 256;
-const GLuint amountOfWorkGroups = 256;
+enum { NO_FRICTION, FRICTION };
+static int friction = NO_FRICTION;
+
+const GLuint amountOfParticles = 8;
+const GLuint amountOfWorkGroups = 8;
 
 float randomBetweenFloats(float min, float max) {
 	float result = min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (min - max)));
@@ -47,7 +50,7 @@ GLdouble customTimer(int lastCallTime)
 		T_FPS_Count = 0;
 	}
 
-	//printf("deltatime: %f\n", T_Interval);
+	printf("deltatime: %f\n", T_Interval);
 
 	return T_Interval;
 }
@@ -124,10 +127,11 @@ Particle* fillParticlesArray(Particle* particles)
 	particles = new Particle[amountOfParticles];
 	for (int i = 0; i < amountOfParticles; i++)
 	{
-		particles[i].setPosition(glm::vec4(randomBetweenFloats(0.01f, 0.7f), randomBetweenFloats(0.01f, 0.7f), 0.f, 0.f));
-		particles[i].setVelocity(glm::vec4(randomBetweenFloats(0.f, 0.03f), randomBetweenFloats(0.f, 0.03f), 0.f, 0.f));
-		particles[i].setRadius(0.015f);
-		particles[i].setMass(10.0f);
+		//particles[i].setPosition(glm::vec4(randomBetweenFloats(0.01f, 0.7f), randomBetweenFloats(0.01f, 0.7f), 0.f, 0.f));
+		particles[i].setPosition(glm::vec4(600.f, 450.f, 0.f, 0.f));
+		particles[i].setVelocity(glm::vec4(randomBetweenFloats(0.f, 30.f), randomBetweenFloats(0.f, 30.f), 0.f, 0.f));
+		particles[i].setRadius(20.f);
+		particles[i].setMass(1000.0f);
 		particles[i].setProperty(1.f);
 	}
 	// preCalculate densities
@@ -471,31 +475,26 @@ int main() {
 		nk_glfw3_new_frame();
 
 		/* GUI */
-		if (nk_begin(ctx, "Physics Config", nk_rect(25, 25, 330, 370),
+		if (nk_begin(ctx, "Physics Config", nk_rect(25, 25, 330, 390),
 			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 			NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
 		{
-			/*enum { EASY, HARD };
-			static int op = EASY;*/
+
 			nk_layout_row_static(ctx, 30, 100, 1);
 			if (nk_button_label(ctx, "Reset values")) {
-				gravity = 0.f;
-				collisionDamping = 0.9f;
+				gravity = 1000.f;
+				collisionDamping = 0.8f;
 				pressureMultiplier = 0.05f;
 				targetDensity = 0.75f;
-				speed = 1.f;
+				speed = 4.f;
 
 				std::cout << "Values are now like the start default values" << "\n";
 			}
 
-			/*nk_layout_row_dynamic(ctx, 30, 2);
-			if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-			if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;*/
-
 			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_property_float(ctx, "Gravity:", -10.f, &gravity, 10.f, 0.1f, 0.01f);
+			nk_property_float(ctx, "Gravity:", -1000.f, &gravity, 1000.f, 1.f, 0.1f);
 			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_slider_float(ctx, -10.f, &gravity, 10.f, 0.01f);
+			nk_slider_float(ctx, -1000.f, &gravity, 1000.f, 0.1f);
 
 			nk_layout_row_dynamic(ctx, 25, 1);
 			nk_property_float(ctx, "Speed:", -10.f, &speed, 20.f, 1.f, 1.f);
@@ -513,9 +512,13 @@ int main() {
 			nk_slider_float(ctx, -10.f, &targetDensity, 10.f, 0.01f);
 
 			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_property_float(ctx, "Collision Damping:", -10.f, &collisionDamping, 10.f, 0.1f, 0.01f);
+			nk_property_float(ctx, "Collision Damping:", 0.1f, &collisionDamping, 0.99f, 0.1f, 0.01f);
 			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_slider_float(ctx, -10.f, &collisionDamping, 10.f, 0.01f);
+			nk_slider_float(ctx, 0.1f, &collisionDamping, 0.99f, 0.01f);
+
+			nk_layout_row_dynamic(ctx, 30, 2);
+			if (nk_option_label(ctx, "friction", friction == FRICTION)) friction = FRICTION;
+			if (nk_option_label(ctx, "no_friction", friction == NO_FRICTION)) friction = NO_FRICTION;
 
 
 			/*nk_layout_row_dynamic(ctx, 20, 1);
@@ -590,6 +593,8 @@ int main() {
 		compute_program.set1f(pressureMultiplier, "pressureMultiplier");
 		compute_program.set1f(targetDensity, "targetDensity");
 		compute_program.set1f(speed, "speed");
+		compute_program.set1i(friction, "friction");
+		compute_program.setVec2f(glm::fvec2((GLfloat)WINDOW_WIDTH, (GLfloat)WINDOW_HEIGHT), "resolution");
 
 		// Use a program
 		core_program.use();
